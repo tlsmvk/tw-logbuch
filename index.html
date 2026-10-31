@@ -1,0 +1,629 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px)}body{margin:0}[hidden]{display:none!important}</style>
+<script>window.__TW_STANDALONE__=true</script>
+<title>Torwart-Logbuch</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#14202B">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TW-Logbuch">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: one-column phone app — scoreboard header with goal-post stripe, scrolling content, fixed bottom tab bar. */
+:root{
+  --bg:#EDF1F5; --surface:#FFFFFF; --sunk:#E2E8EF; --fg:#14202B; --muted:#5A6A7A; --line:#D3DBE4;
+  --accent:#C9302B; --accent-ink:#FFFFFF; --head:#14202B; --head-fg:#F3F6F9; --post-light:#FFFFFF;
+  --c1:#1F5FAF; --c2:#C9302B; --c3:#B57A06; --c4:#2D8656;
+  --s-da:#2D8656; --s-ent:#B57A06; --s-unent:#C9302B; --s-verl:#7A4FB5;
+  --display:"Barlow Condensed","Arial Narrow","Roboto Condensed",sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0D141B; --surface:#15202A; --sunk:#1C2935; --fg:#E5ECF2; --muted:#93A3B3; --line:#263544;
+  --accent:#F0544E; --accent-ink:#FFFFFF; --head:#0A1016; --head-fg:#E5ECF2; --post-light:#E5ECF2;
+  --c1:#62A2EE; --c2:#F0544E; --c3:#E0A93A; --c4:#4CB97E;
+  --s-da:#4CB97E; --s-ent:#E0A93A; --s-unent:#F0544E; --s-verl:#A882E0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0D141B; --surface:#15202A; --sunk:#1C2935; --fg:#E5ECF2; --muted:#93A3B3; --line:#263544;
+  --accent:#F0544E; --accent-ink:#FFFFFF; --head:#0A1016; --head-fg:#E5ECF2; --post-light:#E5ECF2;
+  --c1:#62A2EE; --c2:#F0544E; --c3:#E0A93A; --c4:#4CB97E;
+  --s-da:#4CB97E; --s-ent:#E0A93A; --s-unent:#F0544E; --s-verl:#A882E0; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.45;-webkit-tap-highlight-color:transparent}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--head)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--c1);outline-offset:2px}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-width:720px;margin:0 auto}
+
+/* header */
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--head);color:var(--head-fg)}
+header.top .wrap{display:flex;align-items:center;gap:10px;padding-block:10px;min-height:54px}
+header.top h1{font-family:var(--display);font-weight:700;font-size:24px;letter-spacing:.02em;margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-wrap:balance}
+header.top .back{background:none;border:0;color:var(--head-fg);font-size:15px;padding:6px 8px 6px 0;display:flex;align-items:center;gap:4px}
+header.top .hbtn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:999px;padding:7px 14px;font-weight:600;font-size:14px;white-space:nowrap}
+.post{height:6px;background:repeating-linear-gradient(90deg,var(--accent) 0 28px,var(--post-light) 28px 56px)}
+
+main{padding-block:16px calc(96px + env(safe-area-inset-bottom,0px))}
+.stack{display:flex;flex-direction:column;gap:12px}
+.sec{display:flex;flex-direction:column;gap:10px;margin-top:18px}
+.sec:first-child{margin-top:0}
+.eyebrow{font-family:var(--display);font-weight:600;text-transform:uppercase;letter-spacing:.08em;font-size:14px;color:var(--muted);margin:0;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.muted{color:var(--muted)}
+.small{font-size:13px}
+
+/* cards */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-top:1px solid var(--line);width:100%;background:none;border-left:0;border-right:0;border-bottom:0;text-align:left}
+.row:first-child{border-top:0}
+button.row:active{background:var(--sunk)}
+.row .grow{flex:1;min-width:0}
+.row .title{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chev{color:var(--muted);flex:none}
+
+/* date block: scoreboard style */
+.dt{flex:none;width:52px;text-align:center;border-radius:8px;background:var(--sunk);padding:4px 0;font-family:var(--display);line-height:1.05}
+.dt b{display:block;font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+.dt span{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.dt.next{background:var(--accent);color:var(--accent-ink)}
+.dt.next span{color:var(--accent-ink);opacity:.85}
+
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;align-items:center}
+
+/* chips / filters */
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 12px;font-size:14px;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+
+/* forms */
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:500;min-width:0}
+.in{width:100%;border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 12px;font-size:16px;color:var(--fg);min-width:0}
+textarea.in{min-height:84px;resize:vertical;line-height:1.4}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:10px 14px;font-weight:600;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.btn.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.ghost{background:none}
+.btn.danger{color:var(--s-unent)}
+.btn.block{width:100%}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+
+/* attendance */
+.att{display:flex;flex-direction:column;gap:8px;padding:12px 14px;border-top:1px solid var(--line)}
+.att:first-child{border-top:0}
+.att-top{display:flex;align-items:center;gap:10px}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.seg button{border:1px solid var(--line);background:var(--surface);border-radius:7px;padding:7px 2px;font-size:13px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"][data-s="da"]{background:var(--s-da);border-color:var(--s-da);color:#fff}
+.seg button[aria-pressed="true"][data-s="ent"]{background:var(--s-ent);border-color:var(--s-ent);color:#fff}
+.seg button[aria-pressed="true"][data-s="unent"]{background:var(--s-unent);border-color:var(--s-unent);color:#fff}
+.seg button[aria-pressed="true"][data-s="verl"]{background:var(--s-verl);border-color:var(--s-verl);color:#fff}
+.dot{width:10px;height:10px;border-radius:50%;flex:none;background:var(--line)}
+.rate-btn{border:1px solid var(--line);background:var(--sunk);border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+.rate-btn.has{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+
+/* rating */
+.grp{display:flex;flex-direction:column}
+.grp h3{font-family:var(--display);font-weight:700;font-size:19px;margin:0;display:flex;align-items:center;gap:8px}
+.grp h3 i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.crow{display:flex;align-items:center;gap:10px;padding:9px 0;border-top:1px solid var(--line)}
+.crow:first-of-type{border-top:0}
+.crow .nm{flex:1;min-width:0;font-size:15px}
+.scale{display:flex;gap:4px;flex:none}
+.scale button{width:36px;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--surface);font-family:var(--display);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.scale button[aria-pressed="true"]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+.scale button.lit{background:var(--sunk);color:var(--fg)}
+.legend-scale{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+
+/* stats */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;min-width:0}
+.tile b{display:block;font-family:var(--display);font-size:30px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.tile span{font-size:12px;color:var(--muted);line-height:1.2;display:block;margin-top:4px}
+.chart{width:100%;height:auto;display:block}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:13px}
+.legend button{background:none;border:0;padding:2px 0;display:inline-flex;align-items:center;gap:6px;color:var(--fg)}
+.legend button[aria-pressed="false"]{opacity:.4}
+.legend i{width:14px;height:3px;border-radius:2px;display:inline-block}
+table.cat{width:100%;border-collapse:collapse;font-size:14px}
+table.cat th{font-weight:600;color:var(--muted);font-size:12px;text-align:right;padding:6px 4px;text-transform:uppercase;letter-spacing:.04em}
+table.cat th:first-child{text-align:left}
+table.cat td{padding:7px 4px;border-top:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums}
+table.cat td:first-child{text-align:left}
+table.cat tr.g td{font-family:var(--display);font-weight:700;font-size:16px;padding-top:12px}
+.tr-up{color:var(--s-da)} .tr-down{color:var(--s-unent)} .tr-eq{color:var(--muted)}
+.bar{height:6px;border-radius:3px;background:var(--sunk);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--s-da)}
+
+.note{padding:12px 14px;border-top:1px solid var(--line)}
+.note:first-child{border-top:0}
+.note p{margin:4px 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+.note .nh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.x{background:none;border:0;color:var(--muted);padding:4px 6px;font-size:13px}
+
+.banner{background:var(--sunk);border:1px dashed var(--muted);border-radius:var(--r);padding:12px 14px;display:flex;flex-direction:column;gap:8px;font-size:14px}
+.empty{text-align:center;color:var(--muted);padding:28px 16px;font-size:15px}
+
+/* tab bar */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav.tabs .wrap{display:grid;grid-template-columns:repeat(3,1fr)}
+nav.tabs button{background:none;border:0;padding:8px 0 10px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px;font-weight:600;color:var(--muted)}
+nav.tabs button svg{width:24px;height:24px}
+nav.tabs button[aria-current="page"]{color:var(--accent)}
+
+/* sheet */
+.scrim{position:fixed;inset:0;background:rgba(5,10,15,.5);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--bg);width:100%;max-width:720px;border-radius:16px 16px 0 0;max-height:88vh;overflow:auto;padding-block:16px calc(16px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:12px}
+.sheet h2{font-family:var(--display);font-size:22px;margin:0}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:14px;font-weight:600;z-index:50;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){.sheet{animation:up .18s ease-out}@keyframes up{from{transform:translateY(24px);opacity:.6}}}
+@media (max-width:360px){.scale button{width:32px;height:32px}.tile b{font-size:26px}}
+</style>
+
+</head>
+<body>
+<header class="top"><div class="wrap" id="hdr"></div><div class="post"></div></header>
+<main class="wrap" id="app"></main>
+<nav class="tabs" aria-label="Bereiche"><div class="wrap" id="tabs"></div></nav>
+<div id="layer"></div>
+
+<script>
+(function(){
+"use strict";
+const KEY = "tw-logbuch-v1";
+const STATUS = {da:{l:"Da",c:"var(--s-da)"}, ent:{l:"Entsch.",c:"var(--s-ent)"}, unent:{l:"Unent.",c:"var(--s-unent)"}, verl:{l:"Verletzt",c:"var(--s-verl)"}};
+const STATUS_LONG = {da:"anwesend", ent:"entschuldigt", unent:"unentschuldigt", verl:"verletzt"};
+const GCOL = ["var(--c1)","var(--c2)","var(--c3)","var(--c4)","var(--muted)"];
+const WD = ["So","Mo","Di","Mi","Do","Fr","Sa"];
+const MON = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+
+/* ---------- data ---------- */
+function uid(){return Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3)}
+function defaultCategories(){
+  const g = {
+    "Abwehrtechnik":["Grundstellung","Abwehr hoch / halbhoch","Abwehr tief / Spagat","Hüft- & Beinarbeit"],
+    "Wurfsituationen":["Außenwürfe","Kreis","Rückraum / Fernwürfe","7-Meter","Gegenstoß 1-gegen-1"],
+    "Stellungsspiel & Antizipation":["Winkel verkürzen","Positionierung","Wurfbild lesen","Reaktion"],
+    "Spielöffnung & Mentales":["Tempogegenstoß-Pass","Kommunikation mit Abwehr","Konzentration","Einsatz"]
+  };
+  const out=[]; Object.keys(g).forEach(gr=>g[gr].forEach(n=>out.push({id:uid(),name:n,group:gr,archived:false})));
+  return out;
+}
+function emptyDB(){return {app:"tw-logbuch",version:1,sample:false,settings:{teams:[],categories:defaultCategories()},keepers:[],trainings:[]}}
+function iso(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function todayISO(){return iso(new Date())}
+function addDays(s,n){const d=new Date(s+"T12:00:00");d.setDate(d.getDate()+n);return iso(d)}
+
+function sampleDB(){
+  const db=emptyDB(); db.sample=true;
+  db.settings.teams=["C-Jugend","B-Jugend"];
+  const ks=[["Lena K.","C-Jugend",2012],["Jonas M.","C-Jugend",2013],["Mia S.","B-Jugend",2010],["Paul R.","B-Jugend",2011]];
+  db.keepers=ks.map(k=>({id:uid(),name:k[0],team:k[1],year:k[2],active:true,notes:[]}));
+  const cats=db.settings.categories;
+  let seed=7; const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280};
+  const topics=["Abwehr tief & Spagat","Außenwürfe: kurze Ecke zu","7-Meter-Duell","Gegenstoß 1-gegen-1","Rückraumwürfe lesen","Beinarbeit & Grundstellung","Tempogegenstoß-Pass","Kreisanspiele"];
+  const today=todayISO(); const dnow=new Date(today+"T12:00:00");
+  // last Tuesday
+  const back=(dnow.getDay()+5)%7||7; let start=addDays(today,-back-7*7);
+  for(let w=0;w<10;w++){
+    const date=addDays(start,7*w); const past=date<today;
+    const t={id:uid(),date,time:"17:30",place:"Sporthalle Nord",team:"",topic:topics[w%topics.length],plan:"Aufwärmen mit Koordinationsleiter\nHauptteil: "+topics[w%topics.length]+"\nAbschluss: Würfe aus dem Spiel",review:"",attendance:{},ratings:{}};
+    if(past){
+      db.keepers.forEach((k,ki)=>{
+        const r=rnd(); const st=r<.78?"da":r<.88?"ent":r<.95?"verl":"unent";
+        t.attendance[k.id]=st;
+        if(st==="da"){
+          const rr={cats:{},note:""};
+          const base=2.3+ki*0.25+w*0.12;
+          const groups=[...new Set(cats.map(c=>c.group))];
+          const g1=groups[w%groups.length], g2=groups[(w+1)%groups.length];
+          cats.forEach((c,ci)=>{ if(c.group===g1||c.group===g2||rnd()<.15){ rr.cats[c.id]=Math.max(1,Math.min(5,Math.round(base+(rnd()-.5)*1.6))) } });
+          if(rnd()<.45) rr.note=["Gute Konzentration, Spagat noch zu langsam.","Kurze Ecke bei Außenwürfen sicher.","Muss lauter mit der Abwehr reden.","Starke Reaktion auf Rückraumwürfe.","Nach Fehlern schnell wieder da."][Math.floor(rnd()*5)];
+          t.ratings[k.id]=rr;
+        }
+      });
+      if(w===7) t.review="Gute Intensität, Gegenstoß-Pässe noch zu ungenau.";
+    }
+    db.trainings.push(t);
+  }
+  db.keepers[0].notes=[{id:uid(),date:addDays(today,-40),text:"Stark im Eins-gegen-eins, sucht oft zu früh den Boden. Ziel: länger stehen bleiben."},{id:uid(),date:addDays(today,-6),text:"Deutlich ruhiger bei Außenwürfen. Nächster Schwerpunkt: Spielöffnung."}];
+  db.keepers[2].notes=[{id:uid(),date:addDays(today,-20),text:"Führungsrolle in der B-Jugend, coacht die Abwehr gut."}];
+  return db;
+}
+
+let db; let storageOK=true;
+function load(){
+  try{const raw=localStorage.getItem(KEY); if(raw){const d=JSON.parse(raw); return migrate(d)}}catch(e){storageOK=false}
+  return sampleDB();
+}
+function migrate(d){
+  if(!d||typeof d!=="object") return emptyDB();
+  d.settings=d.settings||{}; d.settings.teams=d.settings.teams||[]; d.settings.categories=d.settings.categories||defaultCategories();
+  d.keepers=(d.keepers||[]).map(k=>Object.assign({notes:[],active:true,team:"",year:""},k));
+  d.trainings=(d.trainings||[]).map(t=>Object.assign({time:"",place:"",team:"",topic:"",plan:"",review:"",attendance:{},ratings:{}},t));
+  d.version=1; d.app="tw-logbuch"; return d;
+}
+let saveTimer=null;
+function save(now){
+  clearTimeout(saveTimer);
+  const go=()=>{try{localStorage.setItem(KEY,JSON.stringify(db));storageOK=true}catch(e){storageOK=false}};
+  if(now) go(); else saveTimer=setTimeout(go,250);
+}
+window.addEventListener("pagehide",()=>save(true));
+document.addEventListener("visibilitychange",()=>{if(document.hidden) save(true)});
+try{ if(navigator.storage&&navigator.storage.persist) navigator.storage.persist() }catch(e){}
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function fmtDate(s,long){if(!s)return "";const d=new Date(s+"T12:00:00");return long?WD[d.getDay()]+", "+d.getDate()+". "+MON[d.getMonth()]+" "+d.getFullYear():d.getDate()+". "+MON[d.getMonth()]}
+function keeper(id){return db.keepers.find(k=>k.id===id)}
+function training(id){return db.trainings.find(t=>t.id===id)}
+function activeCats(){return db.settings.categories.filter(c=>!c.archived)}
+function groups(all){const cs=all?db.settings.categories:activeCats();return [...new Set(cs.map(c=>c.group))]}
+function groupColor(g){const i=groups(true).indexOf(g);return GCOL[Math.min(i<0?4:i,4)]}
+function avg(a){a=a.filter(v=>typeof v==="number");return a.length?a.reduce((x,y)=>x+y,0)/a.length:null}
+function f1(v){return v==null?"–":v.toFixed(1).replace(".",",")}
+function ratingAvg(r){return r?avg(Object.values(r.cats||{})):null}
+function keepersFor(t){return db.keepers.filter(k=>(k.active||t.attendance[k.id]||t.ratings[k.id])&&(!t.team||k.team===t.team||t.attendance[k.id]))}
+function sortedTrainings(){return db.trainings.slice().sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time))}
+function keeperHistory(k){ // trainings with entries for keeper, ascending
+  return sortedTrainings().filter(t=>t.attendance[k.id]||t.ratings[k.id]);
+}
+function attendanceStats(k){
+  const h=keeperHistory(k).filter(t=>t.attendance[k.id]); const c={da:0,ent:0,unent:0,verl:0};
+  h.forEach(t=>c[t.attendance[k.id]]++); const n=h.length; return {n,c,q:n?c.da/n:null};
+}
+const ICON={
+  chev:'<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>',
+  back:'<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 6l-6 6 6 6"/></svg>',
+  cal:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>',
+  gk:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 20V6h18v14"/><circle cx="12" cy="10" r="2.2"/><path d="M6 13l3-1h6l3 1M12 12v4l-2 4M12 16l2 4"/></svg>',
+  data:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>'
+};
+
+/* ---------- ui state ---------- */
+const ui={tab:"trainings",view:null,stack:[],filterTeam:"",showPast:8,chartOff:{},chartMode:"groups"};
+function go(view){ui.stack.push(ui.view);ui.view=view;render();window.scrollTo(0,0)}
+function back(){ui.view=ui.stack.pop()||null;render()}
+function setTab(t){ui.tab=t;ui.view=null;ui.stack=[];render();window.scrollTo(0,0)}
+function toast(msg){const el=document.createElement("div");el.className="toast";el.textContent=msg;el.setAttribute("role","status");document.body.appendChild(el);setTimeout(()=>el.remove(),1800)}
+function sheet(html){$("#layer").innerHTML='<div class="scrim" data-a="closeSheet"><div class="sheet" role="dialog" aria-modal="true" data-stop="1">'+html+'</div></div>'}
+function closeSheet(){$("#layer").innerHTML=""}
+let pendingConfirm=null;
+function confirmSheet(title,text,okLabel,fn){pendingConfirm=fn;sheet('<h2>'+esc(title)+'</h2><p class="muted" style="margin:0">'+esc(text)+'</p><div class="btns"><button class="btn danger" data-a="confirmOk" style="flex:1">'+esc(okLabel)+'</button><button class="btn" data-a="closeSheet" style="flex:1">Abbrechen</button></div>')}
+
+/* ---------- render ---------- */
+function header(title,opts){
+  opts=opts||{};
+  return (opts.back?'<button class="back" data-a="back" aria-label="Zurück">'+ICON.back+'Zurück</button>':'')+
+    '<h1>'+esc(title)+'</h1>'+(opts.btn?'<button class="hbtn" data-a="'+opts.btn[1]+'">'+esc(opts.btn[0])+'</button>':'');
+}
+function render(){
+  const tabs=[["trainings","Trainings",ICON.cal],["keepers","Torhüter",ICON.gk],["data","Daten",ICON.data]];
+  $("#tabs").innerHTML=tabs.map(t=>'<button data-a="tab" data-v="'+t[0]+'"'+(ui.tab===t[0]?' aria-current="page"':'')+'>'+t[2]+t[1]+'</button>').join("");
+  let h="",body="";
+  const v=ui.view;
+  if(v&&v.type==="training"&&training(v.id)){[h,body]=viewTraining(training(v.id))}
+  else if(v&&v.type==="rate"&&training(v.t)&&keeper(v.k)){[h,body]=viewRate(training(v.t),keeper(v.k))}
+  else if(v&&v.type==="keeper"&&keeper(v.id)){[h,body]=viewKeeper(keeper(v.id))}
+  else { ui.view=null;ui.stack=[];
+    if(ui.tab==="trainings")[h,body]=viewTrainings();
+    else if(ui.tab==="keepers")[h,body]=viewKeepers();
+    else [h,body]=viewData();
+  }
+  $("#hdr").innerHTML=h; $("#app").innerHTML=body;
+  document.title="Torwart-Logbuch";
+}
+function sampleBanner(){
+  if(!db.sample) return "";
+  return '<div class="banner"><div><b>Beispieldaten.</b> So sieht das Logbuch mit ein paar Wochen Einträgen aus. Die Torhüter und Bewertungen sind erfunden.</div><div class="btns"><button class="btn pri" data-a="startEmpty">Leeres Logbuch starten</button><button class="btn ghost" data-a="keepSample">Behalten</button></div></div>';
+}
+function teamChips(){
+  if(!db.settings.teams.length) return "";
+  return '<div class="chips" role="group" aria-label="Team-Filter">'+[["","Alle"]].concat(db.settings.teams.map(t=>[t,t])).map(t=>'<button class="chip" data-a="filterTeam" data-v="'+esc(t[0])+'" aria-pressed="'+(ui.filterTeam===t[0])+'">'+esc(t[1])+'</button>').join("")+'</div>';
+}
+function trainingRow(t,isNext){
+  const d=new Date(t.date+"T12:00:00");
+  const ks=keepersFor(t); const da=ks.filter(k=>t.attendance[k.id]==="da").length; const marked=Object.keys(t.attendance).length;
+  const rated=Object.keys(t.ratings).filter(id=>ratingAvg(t.ratings[id])!=null||t.ratings[id].note).length;
+  return '<button class="row" data-a="openTraining" data-id="'+t.id+'"><div class="dt'+(isNext?' next':'')+'"><span>'+WD[d.getDay()]+'</span><b>'+d.getDate()+'.'+(d.getMonth()+1)+'.</b></div><div class="grow"><div class="title">'+esc(t.topic||"Ohne Thema")+'</div><div class="meta">'+
+    (t.time?'<span class="small muted">'+esc(t.time)+' Uhr</span>':'')+(t.team?'<span class="pill">'+esc(t.team)+'</span>':'')+
+    (marked?'<span class="pill" style="color:var(--s-da)">'+da+'/'+ks.length+' da</span>':'')+(rated?'<span class="pill">'+rated+' bewertet</span>':'')+
+    '</div></div>'+ICON.chev+'</button>';
+}
+function viewTrainings(){
+  const today=todayISO(); const all=sortedTrainings().filter(t=>!ui.filterTeam||!t.team||t.team===ui.filterTeam);
+  const up=all.filter(t=>t.date>=today), past=all.filter(t=>t.date<today).reverse();
+  let b='<div class="stack">'+sampleBanner()+teamChips();
+  b+='<div class="sec"><p class="eyebrow">Anstehend</p>'+(up.length?'<div class="list">'+up.map((t,i)=>trainingRow(t,i===0)).join("")+'</div>':'<div class="card empty">Kein Training geplant.<br><button class="btn pri" data-a="newTraining" style="margin-top:10px">Training planen</button></div>')+'</div>';
+  if(past.length){
+    b+='<div class="sec"><p class="eyebrow">Vergangen <span class="small">'+past.length+'</span></p><div class="list">'+past.slice(0,ui.showPast).map(t=>trainingRow(t,false)).join("")+'</div>'+
+      (past.length>ui.showPast?'<button class="btn ghost block" data-a="morePast">Ältere anzeigen</button>':'')+'</div>';
+  }
+  b+='</div>';
+  return [header("Trainings",{btn:["+ Training","newTraining"]}),b];
+}
+function viewTraining(t){
+  const ks=keepersFor(t);
+  const teamOpts='<option value="">Alle Torhüter</option>'+db.settings.teams.map(x=>'<option'+(x===t.team?' selected':'')+'>'+esc(x)+'</option>').join("");
+  let b='<div class="stack">';
+  b+='<div class="card stack"><label class="f">Thema / Schwerpunkt<input class="in" id="t-topic" data-bind="t" data-id="'+t.id+'" data-k="topic" value="'+esc(t.topic)+'" placeholder="z. B. Außenwürfe: kurze Ecke zu"></label>'+
+     '<div class="grid2"><label class="f">Datum<input class="in" type="date" id="t-date" data-bind="t" data-id="'+t.id+'" data-k="date" value="'+esc(t.date)+'"></label><label class="f">Uhrzeit<input class="in" type="time" id="t-time" data-bind="t" data-id="'+t.id+'" data-k="time" value="'+esc(t.time)+'"></label></div>'+
+     '<div class="grid2"><label class="f">Ort<input class="in" id="t-place" data-bind="t" data-id="'+t.id+'" data-k="place" value="'+esc(t.place)+'" placeholder="Halle"></label><label class="f">Gruppe<select class="in" id="t-team" data-bind="t" data-id="'+t.id+'" data-k="team" data-rerender="1">'+teamOpts+'</select></label></div>'+
+     '<label class="f">Ablauf / Übungen<textarea class="in" id="t-plan" data-bind="t" data-id="'+t.id+'" data-k="plan" placeholder="Aufwärmen, Hauptteil, Abschluss">'+esc(t.plan)+'</textarea></label></div>';
+  // attendance
+  const da=ks.filter(k=>t.attendance[k.id]==="da").length;
+  b+='<div class="sec"><p class="eyebrow">Anwesenheit & Bewertung <span class="small">'+da+'/'+ks.length+' da</span></p>';
+  if(!ks.length) b+='<div class="card empty">Noch keine Torhüter'+(t.team?' in '+esc(t.team):'')+'.<br><button class="btn pri" data-a="newKeeper" style="margin-top:10px">Torhüter anlegen</button></div>';
+  else{
+    b+='<div class="list">'+ks.map(k=>{
+      const s=t.attendance[k.id]; const r=t.ratings[k.id]; const a=ratingAvg(r);
+      return '<div class="att"><div class="att-top"><span class="dot" style="background:'+(s?STATUS[s].c:'var(--line)')+'"></span><div class="grow" style="flex:1;min-width:0"><div class="title" style="font-weight:600">'+esc(k.name)+'</div>'+(r&&r.note?'<div class="small muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(r.note)+'</div>':'')+'</div>'+
+        '<button class="rate-btn'+(a!=null||(r&&r.note)?' has':'')+'" data-a="openRate" data-t="'+t.id+'" data-k="'+k.id+'">'+(a!=null?'Ø '+f1(a):r&&r.note?'Notiz':'Bewerten')+'</button></div>'+
+        '<div class="seg" role="group" aria-label="Anwesenheit '+esc(k.name)+'">'+Object.keys(STATUS).map(st=>'<button data-a="att" data-t="'+t.id+'" data-k="'+k.id+'" data-s="'+st+'" aria-pressed="'+(s===st)+'">'+STATUS[st].l+'</button>').join("")+'</div></div>';
+    }).join("")+'</div><button class="btn ghost" data-a="allPresent" data-t="'+t.id+'">Alle offenen auf „Da“ setzen</button>';
+  }
+  b+='</div>';
+  b+='<div class="sec"><p class="eyebrow">Fazit zum Training</p><textarea class="in" id="t-review" data-bind="t" data-id="'+t.id+'" data-k="review" placeholder="Was lief gut, was nehme ich mit?">'+esc(t.review)+'</textarea></div>';
+  b+='<div class="sec btns"><button class="btn" data-a="repeatTraining" data-id="'+t.id+'" style="flex:1">Nächste Woche wiederholen</button><button class="btn danger" data-a="delTraining" data-id="'+t.id+'">Löschen</button></div>';
+  b+='</div>';
+  return [header(fmtDate(t.date,true),{back:true}),b];
+}
+function viewRate(t,k){
+  const r=t.ratings[k.id]||{cats:{},note:""};
+  const ks=keepersFor(t).filter(x=>t.attendance[x.id]!=="ent"&&t.attendance[x.id]!=="unent"&&t.attendance[x.id]!=="verl");
+  const idx=ks.findIndex(x=>x.id===k.id); const nxt=idx>=0&&idx<ks.length-1?ks[idx+1]:null;
+  // previous rating for reference
+  const prevT=keeperHistory(k).filter(x=>(x.date+x.time)<(t.date+t.time)&&x.ratings[k.id]).pop();
+  const prev=prevT?prevT.ratings[k.id].cats:{};
+  let b='<div class="stack"><div class="card"><div style="font-weight:600">'+esc(k.name)+'</div><div class="small muted">'+esc(t.topic||"Training")+' · '+fmtDate(t.date)+'</div>'+
+    '<div class="legend-scale" style="margin-top:10px"><span>1 = Grundlagen fehlen</span><span>5 = sehr sicher</span></div><div class="small muted" style="margin-top:4px">Nur bewerten, was trainiert wurde. Erneut tippen entfernt die Bewertung. Grau hinterlegt: letzte Bewertung.</div></div>';
+  groups().forEach(g=>{
+    const cs=activeCats().filter(c=>c.group===g);
+    b+='<div class="card grp"><h3><i style="background:'+groupColor(g)+'"></i>'+esc(g)+'</h3>'+cs.map(c=>{
+      const v=r.cats[c.id]; const p=prev[c.id];
+      return '<div class="crow"><div class="nm">'+esc(c.name)+'</div><div class="scale" role="group" aria-label="'+esc(c.name)+'">'+[1,2,3,4,5].map(n=>'<button data-a="rate" data-t="'+t.id+'" data-k="'+k.id+'" data-c="'+c.id+'" data-n="'+n+'" aria-pressed="'+(v===n)+'"'+(v!==n&&p===n?' class="lit"':'')+'>'+n+'</button>').join("")+'</div></div>';
+    }).join("")+'</div>';
+  });
+  b+='<div class="sec"><p class="eyebrow">Bemerkung zu diesem Training</p><textarea class="in" id="r-note" data-bind="r" data-t="'+t.id+'" data-k="'+k.id+'" placeholder="Beobachtungen, Fortschritte, nächste Schritte">'+esc(r.note)+'</textarea></div>';
+  b+='<div class="btns">'+(nxt?'<button class="btn pri" data-a="openRate" data-replace="1" data-t="'+t.id+'" data-k="'+nxt.id+'" style="flex:1">Weiter: '+esc(nxt.name)+'</button>':'')+'<button class="btn" data-a="back" style="flex:1">Fertig</button></div></div>';
+  return [header("Bewertung",{back:true}),b];
+}
+function keeperRow(k){
+  const s=attendanceStats(k); const h=keeperHistory(k).map(t=>ratingAvg(t.ratings[k.id])).filter(v=>v!=null);
+  return '<button class="row" data-a="openKeeper" data-id="'+k.id+'"><div class="grow"><div class="title">'+esc(k.name)+(k.active?'':' <span class="pill">inaktiv</span>')+'</div><div class="meta">'+(k.team?'<span class="pill">'+esc(k.team)+'</span>':'')+
+    '<span class="small muted">'+(s.q!=null?Math.round(s.q*100)+' % da':'keine Anwesenheit')+'</span>'+(h.length?'<span class="small muted">· Ø '+f1(avg(h.slice(-5)))+'</span>':'')+'</div></div>'+spark(h.slice(-10))+ICON.chev+'</button>';
+}
+function spark(vals){
+  if(vals.length<2) return '';
+  const w=64,h=26; const pts=vals.map((v,i)=>[i*(w-4)/(vals.length-1)+2, h-2-(v-1)/4*(h-4)]);
+  return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" aria-hidden="true" style="flex:none"><polyline points="'+pts.map(p=>p.map(n=>n.toFixed(1)).join(",")).join(" ")+'" fill="none" style="stroke:var(--c1)" stroke-width="1.8" stroke-linejoin="round"/><circle cx="'+pts[pts.length-1][0].toFixed(1)+'" cy="'+pts[pts.length-1][1].toFixed(1)+'" r="2.6" style="fill:var(--c1)"/></svg>';
+}
+function viewKeepers(){
+  const ks=db.keepers.filter(k=>!ui.filterTeam||k.team===ui.filterTeam).sort((a,b)=>(b.active-a.active)||a.name.localeCompare(b.name,"de"));
+  let b='<div class="stack">'+sampleBanner()+teamChips();
+  b+=ks.length?'<div class="list">'+ks.map(keeperRow).join("")+'</div>':'<div class="card empty">Noch keine Torhüter angelegt.<br><button class="btn pri" data-a="newKeeper" style="margin-top:10px">Torhüter anlegen</button></div>';
+  b+='</div>';
+  return [header("Torhüter",{btn:["+ Torhüter","newKeeper"]}),b];
+}
+function lineChart(series,opt){
+  opt=opt||{}; const W=340,H=190,L=26,R=10,T=10,B=26;
+  const xs=[...new Set(series.flatMap(s=>s.pts.map(p=>p.x)))].sort();
+  if(xs.length<2) return '<div class="small muted" style="padding:14px 0">Ab zwei bewerteten Trainings erscheint hier die Entwicklung.</div>';
+  const t0=new Date(xs[0]+"T12:00:00").getTime(), t1=new Date(xs[xs.length-1]+"T12:00:00").getTime();
+  const X=s=>L+((new Date(s+"T12:00:00").getTime()-t0)/((t1-t0)||1))*(W-L-R);
+  const Y=v=>T+(5-v)/4*(H-T-B);
+  let g='';
+  for(let v=1;v<=5;v++) g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" style="stroke:var(--line)" stroke-width="1"/><text x="'+(L-8)+'" y="'+(Y(v)+4)+'" text-anchor="end" font-size="11" style="fill:var(--muted)">'+v+'</text>';
+  const lab=[xs[0],xs[Math.floor((xs.length-1)/2)],xs[xs.length-1]];
+  [...new Set(lab)].forEach((s,i,arr)=>{g+='<text x="'+X(s)+'" y="'+(H-8)+'" text-anchor="'+(s===xs[0]?'start':s===xs[xs.length-1]?'end':'middle')+'" font-size="11" style="fill:var(--muted)">'+fmtDate(s)+'</text>'});
+  series.forEach(s=>{
+    if(!s.pts.length) return;
+    const d=s.pts.map(p=>X(p.x).toFixed(1)+","+Y(p.y).toFixed(1)).join(" ");
+    if(s.pts.length>1) g+='<polyline points="'+d+'" fill="none" style="stroke:'+s.color+'" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>';
+    s.pts.forEach((p,i)=>{const last=i===s.pts.length-1; g+='<circle cx="'+X(p.x).toFixed(1)+'" cy="'+Y(p.y).toFixed(1)+'" r="'+(last?3.8:2.4)+'" style="fill:'+(last?s.color:'var(--surface)')+';stroke:'+s.color+'" stroke-width="1.6"><title>'+esc(s.name)+' · '+fmtDate(p.x)+': '+f1(p.y)+'</title></circle>'});
+  });
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Entwicklung der Bewertungen">'+g+'</svg>';
+}
+function keeperSeries(k,mode){
+  const hist=keeperHistory(k).filter(t=>t.ratings[k.id]);
+  if(mode==="groups"){
+    return groups(true).map(g=>{const ids=db.settings.categories.filter(c=>c.group===g).map(c=>c.id);
+      return {key:g,name:g,color:groupColor(g),pts:hist.map(t=>({x:t.date,y:avg(ids.map(id=>t.ratings[k.id].cats[id]))})).filter(p=>p.y!=null)}}).filter(s=>s.pts.length);
+  }
+  return [{key:"all",name:"Ø gesamt",color:"var(--c1)",pts:hist.map(t=>({x:t.date,y:ratingAvg(t.ratings[k.id])})).filter(p=>p.y!=null)}];
+}
+function catTable(k){
+  const hist=keeperHistory(k).filter(t=>t.ratings[k.id]);
+  let rows='';
+  groups(true).forEach(g=>{
+    const cs=db.settings.categories.filter(c=>c.group===g);
+    const lines=cs.map(c=>{const vals=hist.map(t=>t.ratings[k.id].cats[c.id]).filter(v=>v!=null); if(!vals.length) return '';
+      const recent=avg(vals.slice(-3)), earlier=vals.length>3?avg(vals.slice(0,-3)):null; const d=earlier==null?null:recent-earlier;
+      const tr=d==null?'<span class="tr-eq">·</span>':d>0.25?'<span class="tr-up" title="besser">▲</span>':d<-0.25?'<span class="tr-down" title="schwächer">▼</span>':'<span class="tr-eq" title="gleich">▬</span>';
+      return '<tr><td>'+esc(c.name)+'</td><td>'+vals.length+'</td><td>'+f1(avg(vals))+'</td><td><b>'+f1(recent)+'</b></td><td>'+tr+'</td></tr>'}).join("");
+    if(lines) rows+='<tr class="g"><td colspan="5"><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:'+groupColor(g)+';margin-right:6px"></span>'+esc(g)+'</td></tr>'+lines;
+  });
+  if(!rows) return '<div class="small muted">Noch keine Bewertungen.</div>';
+  return '<div style="overflow-x:auto"><table class="cat"><thead><tr><th>Kategorie</th><th>n</th><th>Ø</th><th>letzte 3</th><th>Trend</th></tr></thead><tbody>'+rows+'</tbody></table></div>';
+}
+function viewKeeper(k){
+  const s=attendanceStats(k); const hist=keeperHistory(k);
+  const rvals=hist.map(t=>ratingAvg(t.ratings[k.id])).filter(v=>v!=null);
+  const teamOpts='<option value="">Ohne Team</option>'+db.settings.teams.map(x=>'<option'+(x===k.team?' selected':'')+'>'+esc(x)+'</option>').join("");
+  let b='<div class="stack">';
+  b+='<div class="tiles"><div class="tile"><b>'+(s.q!=null?Math.round(s.q*100)+'%':'–')+'</b><span>Anwesenheit<br>'+s.c.da+' von '+s.n+'</span></div><div class="tile"><b>'+f1(avg(rvals.slice(-5)))+'</b><span>Ø letzte 5<br>Bewertungen</span></div><div class="tile"><b>'+rvals.length+'</b><span>bewertete<br>Trainings</span></div></div>';
+  if(s.n){b+='<div class="card"><div class="small muted" style="display:flex;flex-wrap:wrap;gap:4px 14px">'+Object.keys(STATUS).map(st=>'<span><span class="dot" style="display:inline-block;background:'+STATUS[st].c+';margin-right:5px;vertical-align:middle"></span>'+s.c[st]+' '+STATUS_LONG[st]+'</span>').join("")+'</div></div>'}
+  // chart
+  const series=keeperSeries(k,ui.chartMode);
+  const shown=series.filter(x=>!ui.chartOff[x.key]);
+  b+='<div class="sec"><p class="eyebrow">Entwicklung <span class="chips" style="padding:0"><button class="chip" data-a="chartMode" data-v="groups" aria-pressed="'+(ui.chartMode==="groups")+'">Bereiche</button><button class="chip" data-a="chartMode" data-v="all" aria-pressed="'+(ui.chartMode==="all")+'">Gesamt</button></span></p><div class="card stack">'+lineChart(shown)+
+    (series.length>1?'<div class="legend">'+series.map(x=>'<button data-a="chartToggle" data-v="'+esc(x.key)+'" aria-pressed="'+!ui.chartOff[x.key]+'"><i style="background:'+x.color+'"></i>'+esc(x.name)+'</button>').join("")+'</div>':'')+'</div></div>';
+  b+='<div class="sec"><p class="eyebrow">Leistungsstand nach Kategorie</p><div class="card">'+catTable(k)+'</div></div>';
+  // notes
+  const notes=(k.notes||[]).slice().sort((a,b)=>b.date.localeCompare(a.date));
+  b+='<div class="sec"><p class="eyebrow">Bemerkungen zum Leistungsstand</p><div class="card stack"><textarea class="in" id="k-newnote" placeholder="Allgemeiner Stand, Stärken, Ziele …"></textarea><div class="grid2"><input class="in" type="date" id="k-newnote-date" value="'+todayISO()+'" aria-label="Datum der Bemerkung"><button class="btn pri" data-a="addNote" data-id="'+k.id+'">Speichern</button></div></div>'+
+    (notes.length?'<div class="list">'+notes.map(n=>'<div class="note"><div class="nh"><b class="small">'+fmtDate(n.date,true)+'</b><button class="x" data-a="delNote" data-id="'+k.id+'" data-n="'+n.id+'">Löschen</button></div><p>'+esc(n.text)+'</p></div>').join("")+'</div>':'')+'</div>';
+  // history
+  const hr=hist.slice().reverse();
+  b+='<div class="sec"><p class="eyebrow">Trainingsverlauf</p>'+(hr.length?'<div class="list">'+hr.map(t=>{const st=t.attendance[k.id];const r=t.ratings[k.id];const a=ratingAvg(r);
+    return '<button class="row" data-a="openRate" data-t="'+t.id+'" data-k="'+k.id+'"><span class="dot" style="background:'+(st?STATUS[st].c:'var(--line)')+'"></span><div class="grow"><div class="title">'+fmtDate(t.date)+' · '+esc(t.topic||"Training")+'</div>'+(r&&r.note?'<div class="small muted" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(r.note)+'</div>':'<div class="small muted">'+(st?STATUS_LONG[st]:'')+'</div>')+'</div><b style="font-family:var(--display);font-size:18px;font-variant-numeric:tabular-nums">'+(a!=null?f1(a):'')+'</b>'+ICON.chev+'</button>'}).join("")+'</div>':'<div class="card empty">Noch keine Trainings erfasst.</div>')+'</div>';
+  // master data
+  b+='<div class="sec"><p class="eyebrow">Stammdaten</p><div class="card stack"><label class="f">Name<input class="in" id="k-name" data-bind="k" data-id="'+k.id+'" data-k="name" value="'+esc(k.name)+'"></label><div class="grid2"><label class="f">Team<select class="in" id="k-team" data-bind="k" data-id="'+k.id+'" data-k="team">'+teamOpts+'</select></label><label class="f">Jahrgang<input class="in" id="k-year" inputmode="numeric" data-bind="k" data-id="'+k.id+'" data-k="year" value="'+esc(k.year)+'" placeholder="2012"></label></div>'+
+    '<label style="display:flex;align-items:center;gap:8px;font-size:15px"><input type="checkbox" id="k-active" data-bind="k" data-id="'+k.id+'" data-k="active"'+(k.active?' checked':'')+'> Aktiv (erscheint in neuen Trainings)</label><button class="btn danger" data-a="delKeeper" data-id="'+k.id+'">Torhüter löschen</button></div></div>';
+  b+='</div>';
+  return [header(k.name||"Torhüter",{back:true}),b];
+}
+function viewData(){
+  const n={k:db.keepers.length,t:db.trainings.length,r:db.trainings.reduce((s,t)=>s+Object.keys(t.ratings).length,0)};
+  let b='<div class="stack">'+sampleBanner();
+  if(!storageOK) b+='<div class="banner"><b>Speichern im Browser ist hier blockiert.</b> Änderungen gehen beim Schließen verloren. Sichere deine Daten über „Exportieren“.</div>';
+  b+='<div class="sec"><p class="eyebrow">Sicherung</p><div class="card stack"><div class="small muted">Alles liegt nur auf diesem Gerät: '+n.k+' Torhüter, '+n.t+' Trainings, '+n.r+' Einträge zu Anwesenheit/Bewertung. Exportiere regelmäßig eine JSON-Datei als Backup oder zum Umzug auf ein anderes Gerät.</div><div class="btns"><button class="btn pri" data-a="export" style="flex:1">Exportieren</button><button class="btn" data-a="import" style="flex:1">Importieren</button></div></div></div>';
+  // teams
+  b+='<div class="sec"><p class="eyebrow">Teams / Jahrgänge</p><div class="list">'+db.settings.teams.map((t,i)=>'<div class="row"><input class="in grow" id="team-'+i+'" data-bind="team" data-i="'+i+'" value="'+esc(t)+'" aria-label="Teamname"><button class="x" data-a="delTeam" data-i="'+i+'">Entfernen</button></div>').join("")+
+    '<div class="row"><input class="in grow" id="team-new" placeholder="Neues Team, z. B. C-Jugend"><button class="btn" data-a="addTeam">Hinzufügen</button></div></div></div>';
+  // categories
+  b+='<div class="sec"><p class="eyebrow">Bewertungskategorien</p><div class="small muted">Umbenennen wirkt auch auf alte Bewertungen. Ausblenden versteckt eine Kategorie bei neuen Bewertungen, der Verlauf bleibt erhalten.</div>';
+  groups(true).forEach(g=>{
+    const cs=db.settings.categories.filter(c=>c.group===g);
+    b+='<div class="list"><div class="row" style="background:var(--sunk)"><i style="width:12px;height:12px;border-radius:3px;background:'+groupColor(g)+';flex:none"></i><input class="in grow" id="grp-'+esc(g)+'" data-bind="grp" data-g="'+esc(g)+'" value="'+esc(g)+'" aria-label="Bereich" style="font-weight:600"></div>'+
+      cs.map(c=>'<div class="row"><input class="in grow" id="cat-'+c.id+'" data-bind="cat" data-id="'+c.id+'" value="'+esc(c.name)+'" aria-label="Kategorie"'+(c.archived?' style="opacity:.5"':'')+'><button class="x" data-a="toggleCat" data-id="'+c.id+'">'+(c.archived?'Einblenden':'Ausblenden')+'</button></div>').join("")+
+      '<div class="row"><input class="in grow" id="newcat-'+esc(g)+'" placeholder="Neue Kategorie"><button class="btn" data-a="addCat" data-g="'+esc(g)+'">+</button></div></div>';
+  });
+  b+='<div class="row card" style="padding:10px"><input class="in grow" id="grp-new" placeholder="Neuer Bereich, z. B. Athletik"><button class="btn" data-a="addGroup">Anlegen</button></div></div>';
+  // install
+  b+='<div class="sec"><p class="eyebrow">Als App auf den Home-Bildschirm</p><div class="card small" style="display:flex;flex-direction:column;gap:6px"><div><b>iPhone (Safari):</b> Teilen-Symbol → „Zum Home-Bildschirm“.</div><div><b>Android (Chrome):</b> Menü ⋮ → „Zum Startbildschirm hinzufügen“ bzw. „App installieren“.</div><div class="muted">Die Daten gehören zu der Adresse, unter der die App läuft. Öffne sie immer über dasselbe Symbol.</div></div></div>';
+  b+='<div class="sec"><p class="eyebrow">Zurücksetzen</p><div class="btns"><button class="btn danger" data-a="wipe" style="flex:1">Alle Daten löschen</button><button class="btn" data-a="loadSample" style="flex:1">Beispieldaten laden</button></div></div>';
+  b+='<p class="small muted" style="text-align:center;margin-top:20px">Torwart-Logbuch · Datenformat JSON v1</p></div>';
+  return [header("Daten & Einstellungen"),b];
+}
+
+/* ---------- actions ---------- */
+function newTraining(){
+  const last=sortedTrainings().pop();
+  const t={id:uid(),date:todayISO(),time:last?last.time:"",place:last?last.place:"",team:ui.filterTeam||"",topic:"",plan:"",review:"",attendance:{},ratings:{}};
+  db.trainings.push(t); save(); go({type:"training",id:t.id});
+  setTimeout(()=>{const el=$("#t-topic"); if(el) el.focus()},50);
+}
+function newKeeper(){
+  sheet('<h2>Neuer Torhüter</h2><label class="f">Name<input class="in" id="nk-name" placeholder="Vorname N."></label><div class="grid2"><label class="f">Team<select class="in" id="nk-team"><option value="">Ohne Team</option>'+db.settings.teams.map(x=>'<option'+(x===ui.filterTeam?' selected':'')+'>'+esc(x)+'</option>').join("")+'</select></label><label class="f">Jahrgang<input class="in" id="nk-year" inputmode="numeric" placeholder="2012"></label></div><div class="btns"><button class="btn pri" data-a="saveKeeper" style="flex:1">Anlegen</button><button class="btn" data-a="closeSheet" style="flex:1">Abbrechen</button></div>');
+  setTimeout(()=>{const el=$("#nk-name"); if(el) el.focus()},50);
+}
+function exportData(){
+  const json=JSON.stringify(db,null,2);
+  const name="tw-logbuch-"+todayISO()+".json";
+  sheet('<h2>Daten exportieren</h2><p class="small muted" style="margin:0">Speichere die Datei z. B. in „Dateien“ / Google Drive. Falls „Datei speichern“ hier nichts tut, kopiere den Text und lege ihn in einer Notiz oder Mail ab.</p><div class="btns"><button class="btn pri" data-a="dlExport" style="flex:1">Datei speichern</button><button class="btn" data-a="copyExport" style="flex:1">Text kopieren</button></div><textarea class="in" id="exp-text" readonly style="min-height:140px;font-family:ui-monospace,Menlo,monospace;font-size:12px">'+esc(json)+'</textarea><button class="btn ghost" data-a="closeSheet">Schließen</button>');
+  exportData.name_=name; exportData.json=json;
+}
+async function dlExport(){
+  const json=exportData.json, name=exportData.name_;
+  const blob=new Blob([json],{type:"application/json"});
+  try{ const file=new File([blob],name,{type:"application/json"});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:name}); toast("Exportiert"); return } }catch(e){ if(e&&e.name==="AbortError") return }
+  try{ const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1000); toast("Download gestartet") }catch(e){ toast("Speichern nicht möglich – bitte Text kopieren") }
+}
+function importData(){
+  sheet('<h2>Daten importieren</h2><p class="small muted" style="margin:0">Ersetzt alle Daten auf diesem Gerät durch die Sicherung. Exportiere vorher, wenn du unsicher bist.</p><label class="btn block" for="imp-file">JSON-Datei wählen</label><input type="file" id="imp-file" accept=".json,application/json" hidden><div class="small muted">oder Text einfügen:</div><textarea class="in" id="imp-text" placeholder="{ &quot;app&quot;: &quot;tw-logbuch&quot;, … }" style="min-height:110px;font-family:ui-monospace,Menlo,monospace;font-size:12px"></textarea><div class="btns"><button class="btn pri" data-a="doImport" style="flex:1">Importieren</button><button class="btn" data-a="closeSheet" style="flex:1">Abbrechen</button></div>');
+}
+function applyImport(text){
+  let d; try{d=JSON.parse(text)}catch(e){toast("Das ist kein gültiges JSON");return}
+  if(!d||!Array.isArray(d.keepers)||!Array.isArray(d.trainings)){toast("Keine Torwart-Logbuch-Sicherung");return}
+  db=migrate(d); db.sample=false; save(true); closeSheet(); ui.view=null; ui.stack=[]; render(); toast("Importiert: "+db.keepers.length+" Torhüter, "+db.trainings.length+" Trainings");
+}
+
+const A={
+  tab:el=>setTab(el.dataset.v),
+  back:()=>back(),
+  closeSheet:(el,e)=>{ if(e.target.closest("[data-stop]")&&el.classList.contains("scrim")) return; closeSheet() },
+  confirmOk:()=>{const f=pendingConfirm;pendingConfirm=null;closeSheet();if(f)f()},
+  filterTeam:el=>{ui.filterTeam=el.dataset.v;render()},
+  morePast:()=>{ui.showPast+=20;render()},
+  newTraining:()=>newTraining(),
+  openTraining:el=>go({type:"training",id:el.dataset.id}),
+  att:el=>{const t=training(el.dataset.t),k=el.dataset.k,s=el.dataset.s; if(t.attendance[k]===s) delete t.attendance[k]; else t.attendance[k]=s; save(); render()},
+  allPresent:el=>{const t=training(el.dataset.t); keepersFor(t).forEach(k=>{if(!t.attendance[k.id]) t.attendance[k.id]="da"}); save(); render()},
+  openRate:el=>{ const v={type:"rate",t:el.dataset.t,k:el.dataset.k}; if(el.dataset.replace){ui.view=v;render();window.scrollTo(0,0)} else go(v) },
+  rate:el=>{const t=training(el.dataset.t),k=el.dataset.k,c=el.dataset.c,n=+el.dataset.n; const r=t.ratings[k]=t.ratings[k]||{cats:{},note:""};
+    if(r.cats[c]===n) delete r.cats[c]; else r.cats[c]=n;
+    if(!Object.keys(r.cats).length&&!r.note) delete t.ratings[k];
+    if(r.cats[c]!=null&&!t.attendance[k]) t.attendance[k]="da";
+    save(); const y=window.scrollY; render(); window.scrollTo(0,y)},
+  repeatTraining:el=>{const s=training(el.dataset.id); const t={id:uid(),date:addDays(s.date,7),time:s.time,place:s.place,team:s.team,topic:s.topic,plan:s.plan,review:"",attendance:{},ratings:{}}; db.trainings.push(t); save(); ui.view={type:"training",id:t.id}; render(); window.scrollTo(0,0); toast("Für "+fmtDate(t.date)+" angelegt")},
+  delTraining:el=>confirmSheet("Training löschen?","Anwesenheit und Bewertungen dieses Trainings gehen verloren.","Löschen",()=>{db.trainings=db.trainings.filter(t=>t.id!==el.dataset.id);save();back();toast("Training gelöscht")}),
+  newKeeper:()=>newKeeper(),
+  saveKeeper:()=>{const name=$("#nk-name").value.trim(); if(!name){toast("Bitte einen Namen eingeben");return}
+    const k={id:uid(),name,team:$("#nk-team").value,year:$("#nk-year").value.trim(),active:true,notes:[]}; db.keepers.push(k); save(); closeSheet(); render(); toast(name+" angelegt")},
+  openKeeper:el=>{ui.chartOff={};go({type:"keeper",id:el.dataset.id})},
+  chartMode:el=>{ui.chartMode=el.dataset.v;ui.chartOff={};const y=window.scrollY;render();window.scrollTo(0,y)},
+  chartToggle:el=>{ui.chartOff[el.dataset.v]=!ui.chartOff[el.dataset.v];const y=window.scrollY;render();window.scrollTo(0,y)},
+  addNote:el=>{const k=keeper(el.dataset.id); const txt=$("#k-newnote").value.trim(); if(!txt){toast("Bemerkung ist leer");return}
+    k.notes.push({id:uid(),date:$("#k-newnote-date").value||todayISO(),text:txt}); save(); const y=window.scrollY; render(); window.scrollTo(0,y); toast("Bemerkung gespeichert")},
+  delNote:el=>confirmSheet("Bemerkung löschen?","Diese Bemerkung wird entfernt.","Löschen",()=>{const k=keeper(el.dataset.id);k.notes=k.notes.filter(n=>n.id!==el.dataset.n);save();render()}),
+  delKeeper:el=>confirmSheet("Torhüter löschen?","Der Torhüter und alle seine Anwesenheiten, Bewertungen und Bemerkungen werden gelöscht. Tipp: „Aktiv“ abwählen behält den Verlauf.","Endgültig löschen",()=>{const id=el.dataset.id; db.keepers=db.keepers.filter(k=>k.id!==id); db.trainings.forEach(t=>{delete t.attendance[id];delete t.ratings[id]}); save(); back(); toast("Torhüter gelöscht")}),
+  startEmpty:()=>confirmSheet("Leeres Logbuch starten?","Die Beispiel-Torhüter und -Trainings werden gelöscht. Kategorien bleiben.","Leer starten",()=>{const cats=db.settings.categories;db=emptyDB();db.settings.categories=cats.map(c=>Object.assign({},c));save(true);ui.filterTeam="";render();toast("Bereit – lege deine Torhüter an")}),
+  keepSample:()=>{db.sample=false;save();render()},
+  loadSample:()=>confirmSheet("Beispieldaten laden?","Ersetzt alle aktuellen Daten durch Beispiele.","Ersetzen",()=>{db=sampleDB();save(true);render()}),
+  wipe:()=>confirmSheet("Alle Daten löschen?","Torhüter, Trainings, Bewertungen und Bemerkungen werden auf diesem Gerät gelöscht. Das lässt sich nicht rückgängig machen.","Alles löschen",()=>{db=emptyDB();save(true);ui.filterTeam="";render();toast("Alle Daten gelöscht")}),
+  export:()=>exportData(),
+  dlExport:()=>dlExport(),
+  copyExport:()=>{const ta=$("#exp-text"); const ok=()=>toast("In die Zwischenablage kopiert");
+    try{navigator.clipboard.writeText(exportData.json).then(ok,()=>{ta.focus();ta.select();toast("Text markiert – jetzt kopieren")})}catch(e){ta.focus();ta.select();toast("Text markiert – jetzt kopieren")}},
+  import:()=>importData(),
+  doImport:()=>{const txt=$("#imp-text").value.trim(); if(!txt){toast("Datei wählen oder Text einfügen");return} applyImport(txt)},
+  addTeam:()=>{const v=$("#team-new").value.trim(); if(!v) return; if(!db.settings.teams.includes(v)) db.settings.teams.push(v); save(); render()},
+  delTeam:el=>{const i=+el.dataset.i; const name=db.settings.teams[i]; confirmSheet("Team „"+name+"“ entfernen?","Torhüter und Trainings bleiben erhalten, verlieren aber die Team-Zuordnung.","Entfernen",()=>{db.settings.teams.splice(i,1);db.keepers.forEach(k=>{if(k.team===name)k.team=""});db.trainings.forEach(t=>{if(t.team===name)t.team=""});if(ui.filterTeam===name)ui.filterTeam="";save();render()})},
+  toggleCat:el=>{const c=db.settings.categories.find(c=>c.id===el.dataset.id);c.archived=!c.archived;save();const y=window.scrollY;render();window.scrollTo(0,y)},
+  addCat:el=>{const g=el.dataset.g; const inp=document.getElementById("newcat-"+g); const v=inp.value.trim(); if(!v) return; db.settings.categories.push({id:uid(),name:v,group:g,archived:false}); save(); const y=window.scrollY; render(); window.scrollTo(0,y)},
+  addGroup:()=>{const v=$("#grp-new").value.trim(); if(!v) return; if(groups(true).includes(v)){toast("Bereich gibt es schon");return} db.settings.categories.push({id:uid(),name:"Neue Kategorie",group:v,archived:false}); save(); const y=window.scrollY; render(); window.scrollTo(0,y); toast("Bereich angelegt – benenne die Kategorie")}
+};
+
+document.addEventListener("click",e=>{
+  const el=e.target.closest("[data-a]"); if(!el) return;
+  if(el.classList.contains("scrim")&&e.target!==el) return;
+  const f=A[el.dataset.a]; if(f){e.preventDefault(); f(el,e)}
+});
+function bindValue(el){
+  const kind=el.dataset.bind; const val=el.type==="checkbox"?el.checked:el.value;
+  if(kind==="t"){const t=training(el.dataset.id); if(t) t[el.dataset.k]=val}
+  else if(kind==="k"){const k=keeper(el.dataset.id); if(k){ k[el.dataset.k]=val; if(el.dataset.k==="name") $("#hdr h1").textContent=val||"Torhüter" }}
+  else if(kind==="r"){const t=training(el.dataset.t),k=el.dataset.k; const r=t.ratings[k]=t.ratings[k]||{cats:{},note:""}; r.note=val; if(!val&&!Object.keys(r.cats).length) delete t.ratings[k]}
+  else if(kind==="cat"){const c=db.settings.categories.find(c=>c.id===el.dataset.id); if(c&&val.trim()) c.name=val.trim()}
+  else if(kind==="team"){const i=+el.dataset.i, old=db.settings.teams[i], v=val.trim(); if(v&&old!==v){db.settings.teams[i]=v; db.keepers.forEach(k=>{if(k.team===old)k.team=v}); db.trainings.forEach(t=>{if(t.team===old)t.team=v}); if(ui.filterTeam===old) ui.filterTeam=v}}
+  else if(kind==="grp"){const old=el.dataset.g, v=val.trim(); if(v&&v!==old&&!groups(true).includes(v)){db.settings.categories.forEach(c=>{if(c.group===old)c.group=v}); el.dataset.g=v}}
+  save();
+}
+document.addEventListener("input",e=>{const el=e.target; if(el.dataset&&el.dataset.bind&&el.tagName!=="SELECT"&&el.type!=="checkbox") bindValue(el)});
+document.addEventListener("change",e=>{const el=e.target;
+  if(el.id==="imp-file"&&el.files&&el.files[0]){const fr=new FileReader(); fr.onload=()=>applyImport(String(fr.result)); fr.readAsText(el.files[0]); return}
+  if(el.dataset&&el.dataset.bind){bindValue(el); if(el.tagName==="SELECT"||el.type==="checkbox"||el.type==="date"||el.dataset.rerender||el.dataset.bind==="grp"||el.dataset.bind==="team") {const y=window.scrollY;render();window.scrollTo(0,y)}}
+});
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&$("#layer").innerHTML) closeSheet();
+  if(e.key==="Enter"&&e.target.id==="team-new") A.addTeam();
+  if(e.key==="Enter"&&e.target.id==="nk-name") A.saveKeeper();
+});
+
+db=load();
+const boot=data=>{ if(data&&data.ui) Object.assign(ui,data.ui); render() };
+try{ window.claude&&window.claude.hot&&window.claude.hot.snapshot&&window.claude.hot.snapshot(()=>({ui:{tab:ui.tab,view:ui.view,stack:ui.stack,filterTeam:ui.filterTeam}})) }catch(e){}
+(window.claude&&window.claude.hot&&window.claude.hot.ready)?window.claude.hot.ready(boot):boot(window.claude&&window.claude.hot&&window.claude.hot.data||{});
+if("serviceWorker" in navigator && /^https?:$/.test(location.protocol) && window.__TW_STANDALONE__){ navigator.serviceWorker.register("sw.js").catch(()=>{}) }
+})();
+</script>
+
+</body>
+</html>
